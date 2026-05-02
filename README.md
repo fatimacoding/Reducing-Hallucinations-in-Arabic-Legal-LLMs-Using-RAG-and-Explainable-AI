@@ -81,14 +81,6 @@ arabic-legal-llm/
 │   └── index.html                    # Results web interface
 │                                     # Live: https://hdla22.github.io/Legal-Results-Interface/
 │
-├── data/                             # Legal corpora
-│   ├── najiz_records.jsonl           # 79-question Najiz benchmark
-│   ├── saudi_legal_corpus_v4.jsonl         # Full Saudi legal corpus (raw)
-│   ├── saudi_legal_corpus_v4_clean.jsonl   # Normalized corpus
-│   ├── articles_corpus_final.jsonl         # Article-level chunks (raw)
-│   └── articles_corpus_final_clean.jsonl   # Article-level chunks (normalized)
-│
-│
 ├── requirements.txt
 └── README.md
 ```
