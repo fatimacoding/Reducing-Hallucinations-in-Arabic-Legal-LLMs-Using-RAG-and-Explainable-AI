@@ -88,15 +88,6 @@ arabic-legal-llm/
 │   ├── articles_corpus_final.jsonl         # Article-level chunks (raw)
 │   └── articles_corpus_final_clean.jsonl   # Article-level chunks (normalized)
 │
-├── artifacts/                        # Pre-built retrieval indexes
-│   ├── boe.index / boe_bge.index     # BOE FAISS indexes
-│   ├── boe_bm25.pkl / boe_tokens.pkl # BOE BM25 indexes
-│   ├── boe_embeddings.npy            # BOE dense embeddings
-│   ├── moj.index / moj_bge.index     # MOJ FAISS indexes
-│   ├── moj_bm25.pkl / moj_tokens.pkl # MOJ BM25 indexes
-│   ├── moj_embeddings.npy            # MOJ dense embeddings
-│   ├── all.index / all_bm25.pkl      # Combined corpus indexes
-│   └── retrieval/                    # Cached retrieval shards
 │
 ├── requirements.txt
 └── README.md
