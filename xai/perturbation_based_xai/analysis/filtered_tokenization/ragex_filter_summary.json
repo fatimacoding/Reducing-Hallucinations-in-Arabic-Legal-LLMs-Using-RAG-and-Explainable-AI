@@ -1,0 +1,52 @@
+{
+  "policy": "list_number_marker_only",
+  "num_samples": 79,
+  "total_sentences_before": 783,
+  "total_sentences_after": 616,
+  "total_dropped": 167,
+  "drop_rate": 0.2133,
+  "strategy_macro_means": {
+    "Leave-One-Out": {
+      "macro_mean_before": 0.3851,
+      "macro_mean_after": 0.3942,
+      "delta": 0.0091,
+      "samples_with_data_before": 79,
+      "samples_with_data_after": 79
+    },
+    "Random Noise": {
+      "macro_mean_before": 0.4502,
+      "macro_mean_after": 0.4558,
+      "delta": 0.0056,
+      "samples_with_data_before": 79,
+      "samples_with_data_after": 79
+    },
+    "Entity Manipulation": {
+      "macro_mean_before": 0.4432,
+      "macro_mean_after": 0.4447,
+      "delta": 0.0015,
+      "samples_with_data_before": 79,
+      "samples_with_data_after": 79
+    },
+    "Antonym Injection": {
+      "macro_mean_before": 0.4407,
+      "macro_mean_after": 0.4406,
+      "delta": -0.0001,
+      "samples_with_data_before": 79,
+      "samples_with_data_after": 79
+    },
+    "Synonym Injection": {
+      "macro_mean_before": 0.4391,
+      "macro_mean_after": 0.451,
+      "delta": 0.0119,
+      "samples_with_data_before": 79,
+      "samples_with_data_after": 79
+    },
+    "Order Manipulation": {
+      "macro_mean_before": 0.4514,
+      "macro_mean_after": 0.4423,
+      "delta": -0.009,
+      "samples_with_data_before": 79,
+      "samples_with_data_after": 79
+    }
+  }
+}

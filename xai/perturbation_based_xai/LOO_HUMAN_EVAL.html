@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>تقييم أهمية الجمل — Leave-One-Out</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+
+:root {
+  --ink:#0f172a; --ink2:#334155; --muted:#64748b; --faint:#94a3b8;
+  --border:#e2e8f0; --surface:#fff; --bg:#f1f5f9;
+  --navy:#1a1a2e; --navy2:#0f3460; --red:#e94560;
+  --gold:#d4a017; --gold-soft:#fef3c7;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+* { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+body {
+  font-family:'Cairo',sans-serif; background:var(--bg); color:var(--ink);
+  font-size:15px; line-height:1.75;
+  padding-bottom: calc(88px + var(--safe-bottom));
+}
+
+.top-bar {
+  position:sticky; top:0; z-index:100;
+  background:var(--navy); padding:12px 16px;
+  display:flex; align-items:center; justify-content:space-between;
+  box-shadow:0 2px 12px rgba(0,0,0,.3);
+}
+.top-bar-title { color:#fff; font-size:15px; font-weight:700; }
+.top-bar-sub { color:rgba(255,255,255,.6); font-size:11px; margin-top:1px; }
+.progress-wrap { width:72px; }
+.progress-bar { height:4px; background:rgba(255,255,255,.15); border-radius:2px; margin-top:6px; }
+.progress-fill { height:100%; background:var(--red); border-radius:2px; transition:width .4s ease; width:0%; }
+
+.intro-card {
+  background:var(--navy); color:#fff;
+  margin:16px; border-radius:16px; padding:20px 18px;
+  border:1px solid rgba(255,255,255,.1);
+}
+.intro-card h2 { font-size:17px; font-weight:900; margin-bottom:6px; }
+.intro-card p { font-size:13px; opacity:.75; line-height:1.6; }
+.method-tag {
+  display:inline-block; background:var(--red); color:#fff;
+  font-size:11px; font-weight:700; padding:3px 10px; border-radius:8px;
+  margin-bottom:10px; letter-spacing:.5px;
+}
+.intro-rules { margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+.intro-rule {
+  display:flex; align-items:flex-start; gap:10px;
+  background:rgba(255,255,255,.08); border-radius:10px; padding:10px 12px;
+}
+.intro-rule-icon {
+  font-size:14px; flex-shrink:0; font-weight:900;
+  background:var(--red); color:#fff; width:24px; height:24px;
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+}
+.intro-rule-text { font-size:12.5px; opacity:.9; line-height:1.5; }
+.intro-rule-text strong { display:block; font-size:13px; opacity:1; margin-bottom:2px; }
+.warn-strip {
+  margin-top:12px; padding:10px 14px;
+  background:rgba(212,160,23,.18); border-right:3px solid var(--gold);
+  border-radius:0 10px 10px 0; font-size:12.5px; color:#fef3c7;
+}
+
+.eval-strip {
+  background:var(--surface); margin:16px; border-radius:14px;
+  padding:16px; box-shadow:0 1px 8px rgba(0,0,0,.07);
+}
+.eval-strip h3 { font-size:13px; font-weight:700; color:var(--muted); margin-bottom:12px; }
+.strip-fields { display:flex; flex-direction:column; gap:10px; }
+.strip-field label { font-size:11px; font-weight:700; color:var(--faint); display:block; margin-bottom:3px; }
+.strip-field input {
+  width:100%; border:none; border-bottom:2px solid var(--border);
+  padding:6px 0; font-family:'Cairo',sans-serif; font-size:14px;
+  background:transparent; color:var(--ink); outline:none;
+}
+.strip-field input:focus { border-color:var(--navy2); }
+
+.question-card {
+  background:var(--surface); margin:0 16px 20px;
+  border-radius:16px; box-shadow:0 2px 12px rgba(0,0,0,.07); overflow:hidden;
+}
+.card-header {
+  background:linear-gradient(135deg,var(--navy),var(--navy2));
+  color:#fff; padding:14px 16px;
+  display:flex; align-items:flex-start; gap:12px;
+}
+.q-num {
+  background:var(--red); color:#fff; width:34px; height:34px;
+  border-radius:50%; display:flex; align-items:center; justify-content:center;
+  font-weight:900; font-size:14px; flex-shrink:0; margin-top:1px;
+}
+.q-title { font-size:14px; font-weight:700; flex:1; line-height:1.5; }
+.q-badge {
+  background:rgba(255,255,255,.15); border-radius:6px;
+  padding:2px 8px; font-size:10px; white-space:nowrap; align-self:flex-start; margin-top:3px;
+}
+.card-body { padding:16px; }
+.sec-label { font-size:10px; font-weight:700; letter-spacing:.8px; color:var(--faint); margin-bottom:6px; margin-top:14px; }
+.sec-label:first-child { margin-top:0; }
+
+.answer-box {
+  background:#f8fafc; border:1px solid var(--border);
+  border-right:3px solid var(--navy2); border-radius:10px;
+  padding:12px 14px; font-size:13px; color:var(--ink2);
+  white-space:pre-wrap; line-height:1.8;
+}
+
+.sentences-list { display:flex; flex-direction:column; gap:10px; }
+.sentence-row {
+  display:flex; gap:10px; align-items:flex-start;
+  background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px;
+  padding:10px 12px;
+}
+.sent-badge {
+  background:var(--navy2); color:#fff; font-size:11px; font-weight:700;
+  padding:4px 10px; border-radius:6px; flex-shrink:0; white-space:nowrap;
+}
+.sent-content { flex:1; min-width:0; }
+.src-tag { font-size:11px; color:#1d4ed8; font-weight:700; margin-bottom:4px; }
+.sent-body { font-size:13px; color:#1e3a5f; line-height:1.85; -webkit-user-select:text; user-select:text; }
+
+.loo-section {
+  margin-top:18px; border:2px solid var(--gold); border-radius:12px;
+  background:var(--gold-soft); overflow:hidden;
+}
+.loo-hdr {
+  display:flex; gap:10px; align-items:flex-start;
+  padding:12px 14px; background:#fef9c3; border-bottom:1px solid #fde68a;
+}
+.loo-icon { font-size:22px; flex-shrink:0; }
+.loo-title { font-size:11px; font-weight:700; letter-spacing:.6px; color:#92400e; margin-bottom:3px; }
+.loo-q { font-size:13.5px; font-weight:700; color:var(--ink); line-height:1.55; }
+.loo-q strong { color:var(--red); }
+.loo-hint { font-size:11.5px; color:#a16207; margin-top:4px; line-height:1.5; }
+
+.sent-options { padding:12px; display:flex; flex-direction:column; gap:8px; }
+.sent-opt { display:block; cursor:pointer; }
+.sent-opt input { display:none; }
+.sent-card {
+  background:#fff; border:2px solid #fde68a; border-radius:10px;
+  padding:10px 12px; transition:all .15s;
+  display:flex; gap:10px; align-items:flex-start;
+}
+.sent-opt:active .sent-card { transform:scale(.99); }
+.sent-opt input:checked + .sent-card {
+  border-color:var(--red); background:#fff5f6;
+  box-shadow:0 0 0 3px rgba(233,69,96,.15);
+}
+.sent-num {
+  background:#fef3c7; color:#92400e; font-size:11px; font-weight:700;
+  padding:3px 9px; border-radius:6px; flex-shrink:0; white-space:nowrap;
+  border:1px solid #fde68a;
+}
+.sent-opt input:checked + .sent-card .sent-num {
+  background:var(--red); color:#fff; border-color:var(--red);
+}
+.sent-text { font-size:12.5px; color:var(--ink2); line-height:1.7; flex:1; }
+
+.comment-section { margin-top:14px; padding:12px 14px; background:#fffbeb; border:1px solid #fde68a; border-radius:10px; }
+.comment-lbl { font-size:12px; font-weight:700; color:#92400e; margin-bottom:6px; display:flex; align-items:center; gap:6px; }
+.req-badge { background:#fca5a5; color:#7f1d1d; font-size:10px; font-weight:700; padding:1px 7px; border-radius:8px; }
+.comment-area {
+  width:100%; border:2px solid #fcd34d; border-radius:10px;
+  padding:10px 12px; font-family:'Cairo',sans-serif; font-size:13.5px;
+  color:var(--ink); resize:none; background:#fffef0; min-height:62px;
+  transition:.2s;
+}
+.comment-area:focus { outline:none; border-color:#f59e0b; box-shadow:0 0 0 3px #fef3c7; }
+.comment-area.filled { border-color:#86efac; background:#f0fdf4; }
+.comment-hint { font-size:11px; color:#a16207; margin-top:5px; }
+
+.question-card.done .card-header { position:relative; }
+.question-card.done .card-header::after {
+  content:'✓ مكتمل'; position:absolute; top:10px; left:12px;
+  background:rgba(255,255,255,.2); color:#fff; font-size:10px; font-weight:700;
+  padding:2px 8px; border-radius:8px;
+}
+
+.submit-bar {
+  position:fixed; bottom:0; left:0; right:0; z-index:200;
+  background:var(--surface); border-top:1px solid var(--border);
+  padding:12px 16px;
+  padding-bottom: calc(12px + var(--safe-bottom));
+  display:flex; gap:10px; align-items:center;
+  box-shadow:0 -4px 20px rgba(0,0,0,.1);
+}
+.submit-count { font-size:12px; color:var(--muted); flex:1; line-height:1.3; }
+.submit-count strong { display:block; color:var(--ink); font-size:13px; }
+.btn-submit {
+  background:linear-gradient(135deg,#25d366,#128c7e);
+  color:#fff; border:none; border-radius:14px;
+  padding:14px 22px; font-family:'Cairo',sans-serif;
+  font-size:15px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; gap:8px;
+  box-shadow:0 4px 14px rgba(37,211,102,.35);
+  transition:.2s; flex-shrink:0;
+}
+.btn-submit:disabled { background:#94a3b8; box-shadow:none; cursor:not-allowed; }
+.btn-submit:not(:disabled):active { transform:scale(.97); }
+
+#modal-overlay {
+  display:none; position:fixed; inset:0; z-index:500;
+  background:rgba(0,0,0,.5); backdrop-filter:blur(4px);
+  align-items:flex-end; justify-content:center;
+}
+#modal-overlay.open { display:flex; }
+#modal-box {
+  background:var(--surface); border-radius:24px 24px 0 0;
+  padding:20px 16px; width:100%; max-width:520px;
+  max-height:82vh; overflow-y:auto;
+}
+.modal-handle { width:36px; height:4px; background:#cbd5e1; border-radius:2px; margin:0 auto 18px; }
+.modal-title { font-size:17px; font-weight:900; margin-bottom:4px; }
+.modal-sub { font-size:13px; color:var(--muted); margin-bottom:16px; }
+.modal-preview {
+  background:#f8fafc; border:1px solid var(--border); border-radius:12px;
+  padding:14px; font-size:12px; color:var(--ink2); line-height:1.7;
+  max-height:260px; overflow-y:auto; white-space:pre-wrap; margin-bottom:16px;
+}
+.modal-btns { display:flex; gap:10px; }
+.btn-cancel {
+  flex:1; background:#f1f5f9; color:var(--ink2); border:none;
+  border-radius:12px; padding:14px; font-family:'Cairo',sans-serif;
+  font-size:14px; font-weight:700; cursor:pointer;
+}
+.btn-send {
+  flex:2; background:linear-gradient(135deg,#25d366,#128c7e);
+  color:#fff; border:none; border-radius:12px; padding:14px;
+  font-family:'Cairo',sans-serif; font-size:15px; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+}
+
+@media(min-width:600px) {
+  .strip-fields { flex-direction:row; }
+  .question-card, .eval-strip, .intro-card { margin-left:auto; margin-right:auto; max-width:680px; }
+  .submit-bar { justify-content:center; }
+  .submit-bar .submit-count { max-width:260px; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <div class="top-bar-title">🔍 تقييم أهمية الجمل</div>
+    <div class="top-bar-sub" id="prog-text">٠ من ٥ أسئلة مكتملة</div>
+  </div>
+  <div class="progress-wrap">
+    <div class="progress-bar"><div class="progress-fill" id="prog-bar"></div></div>
+  </div>
+</div>
+
+<div class="intro-card">
+  <span class="method-tag">Leave-One-Out</span>
+  <h2>أي جملة كانت الأهم؟</h2>
+  <p>لكل سؤال، اقرأ الإجابة المُولّدة والجمل المصدرية، ثم حدّد <strong>أي جملة لو حُذفت لتغيّرت الإجابة جوهرياً</strong>.</p>
+  <div class="intro-rules">
+    <div class="intro-rule">
+      <div class="intro-rule-icon">١</div>
+      <div class="intro-rule-text"><strong>اقرأ الإجابة</strong>الإجابة التي ولّدها النموذج بناءً على الجمل.</div>
+    </div>
+    <div class="intro-rule">
+      <div class="intro-rule-icon">٢</div>
+      <div class="intro-rule-text"><strong>راجع الجمل</strong>الجمل المصدرية المرقّمة المُستخدمة.</div>
+    </div>
+    <div class="intro-rule">
+      <div class="intro-rule-icon">٣</div>
+      <div class="intro-rule-text"><strong>اختر الأهم</strong>أي جملة تحمل المعلومة الأساسية للإجابة؟</div>
+    </div>
+  </div>
+  <div class="warn-strip">
+    💡 المقصود: تخيّل أن هذه الجملة حُذفت — هل ستتأثر الإجابة بشكل كبير؟ إن نعم، فهي الأهم.
+  </div>
+</div>
+
+<div class="eval-strip">
+  <h3>👤 معلومات المقيّم</h3>
+  <div class="strip-fields">
+    <div class="strip-field"><label>الاسم</label><input type="text" id="ev-name" placeholder="أدخل اسمك"></div>
+    <div class="strip-field"><label>التخصص</label><input type="text" id="ev-spec" placeholder="المحاماة / القضاء..."></div>
+    <div class="strip-field"><label>التاريخ</label><input type="date" id="ev-date"></div>
+  </div>
+</div>
+
+
+  <div class="question-card" id="card-5">
+    <div class="card-header">
+      <div class="q-num">١</div>
+      <span class="q-title">كم تبلغ قيمة التكاليف القضائية لطلب التنفيذ المباشر؟</span>
+      <span class="q-badge">سؤال #٥</span>
+    </div>
+    <div class="card-body">
+      
+      <div class="sec-label">الإجابة الأصلية المُولّدة</div>
+      <div class="answer-box">بناءً على المادة الخامسة من اللائحة التنفيذية لنظام التكاليف القضائية (المشار إليها في مصدرك)، فإن **التكاليف القضائية لطلب التنفيذ المباشر تُقدَّر بمبلغ ثابت قدره 500 ريال سعودي**.
+
+ملاحظة: هذا المبلغ الثابت خاص بطلب التنفيذ المباشر فقط، ويختلف عن تكاليف طلبات التنفيذ الأخرى التي تحسب بنسبة 2% من قيمة المطالبة (بحد أدنى 500 ريال وحد أقصى 10,000 ريال).</div>
+      
+      <div class="sec-label">الجمل المُستخدمة في توليد الإجابة</div>
+      <div class="sentences-list">
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ١</div>
+          <div class="sent-content">
+            <div class="src-tag">📄 اللائحة التنفيذية لنظام التكاليف القضائية -- المادة الخامسة</div>
+            <div class="sent-body">تُقدّر التكاليف القضائية لطلب التنفيذ المباشر بمبلغ قدره خمسمائة ريال، وفيما يتعلق بباقي طلبات التنفيذ، فتقدر التكاليف القضائية بنسبة اثنين في المائة (٢٪) من قيمة المطالبة على ألا تقل هذه التكاليف عن خمسمائة ريال ولا تزيد على عشرة آلاف ريال.</div>
+          </div>
+        </div>
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ٢</div>
+          <div class="sent-content">
+            
+            <div class="sent-body">ويتحمل المنفذ ضده التكاليف القضائية لطلب التنفيذ ما لم يثبت أن طالب التنفيذ غير مستحق لمطالبته، فيتحمل طالب التنفيذ كامل التكاليف القضائية، وإذا كان طالب التنفيذ غير مستحق لجزء من مطالبته، فيتحمل من التكاليف القضائية بقدر هذا الجزء.</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="loo-section">
+        <div class="loo-hdr">
+          <span class="loo-icon">🔍</span>
+          <div>
+            <div class="loo-title">السؤال</div>
+            <div class="loo-q">في رأيك، أي جملة كانت <strong>الأهم</strong> لتوليد الإجابة الصحيحة؟</div>
+            <div class="loo-hint">— أي جملة لو حُذفت لتأثرت الإجابة بشكل جوهري؟</div>
+          </div>
+        </div>
+        <div class="sent-options">
+            <label class="sent-opt">
+              <input type="radio" name="imp-5" value="جملة ١" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ١</div>
+                <div class="sent-text">تُقدّر التكاليف القضائية لطلب التنفيذ المباشر بمبلغ قدره خمسمائة ريال، وفيما يتعلق بباقي طلبات التنفيذ، فتقدر التكاليف القضائية بنسبة اثنين في المائة (٢٪) من قيمة المطالبة على ألا تقل هذه التكاليف عن خمسمائة ريال ولا تزيد على عشرة آلاف ريال.</div>
+              </div>
+            </label>
+            <label class="sent-opt">
+              <input type="radio" name="imp-5" value="جملة ٢" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ٢</div>
+                <div class="sent-text">ويتحمل المنفذ ضده التكاليف القضائية لطلب التنفيذ ما لم يثبت أن طالب التنفيذ غير مستحق لمطالبته، فيتحمل طالب التنفيذ كامل التكاليف القضائية، وإذا كان طالب التنفيذ غير مستحق لجزء من مطالبته، فيتحمل من التكاليف القضائية بقدر هذا الجزء.</div>
+              </div>
+            </label>
+        </div>
+      </div>
+      
+      <div class="comment-section">
+        <div class="comment-lbl">💬 لماذا اخترت هذه الجملة؟ <span class="req-badge">مطلوب</span></div>
+        <textarea class="comment-area" id="note-5" placeholder="مثال: هذه الجملة تحتوي على المعلومة المباشرة التي تجيب على السؤال..." required></textarea>
+        <div class="comment-hint">سطر أو سطرين يكفي</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="question-card" id="card-21">
+    <div class="card-header">
+      <div class="q-num">٢</div>
+      <span class="q-title">كيف يتم احتساب التكاليف القضائية إذا انتهت الدعوى بالصلح؟</span>
+      <span class="q-badge">سؤال #٢١</span>
+    </div>
+    <div class="card-body">
+      
+      <div class="sec-label">الإجابة الأصلية المُولّدة</div>
+      <div class="answer-box">بناءً على المادة الثالثة عشرة من نظام التكاليف القضائية السعودي:
+
+إذا انتهت الدعوى **بالصلح**، فإن الأساس في احتساب التكاليف القضائية هو:
+1. **تحمل أطراف الدعوى للتكاليف بالتساوي** (نصف لكل طرف).
+2. **استثناءً من ذلك**، إذا اتفق الأطراف على طريقة أخرى لتوزيع التكاليف، فيتم العمل **باتفاقهم**.
+
+**خلاصة الإجابة:**
+الطريقة الافتراضية هي التقسيم بالتساوي بين الطرفين، ولكن للأطراف الحرية في الاتفاق على خلاف ذلك (مثل أن يتحمل أحد الطرفين جميع التكاليف، أو يتم توزيعها بنسب مختلفة).</div>
+      
+      <div class="sec-label">الجمل المُستخدمة في توليد الإجابة</div>
+      <div class="sentences-list">
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ١</div>
+          <div class="sent-content">
+            <div class="src-tag">📄 نظام التكاليف القضائية -- المادة الثالثة عشرة</div>
+            <div class="sent-body">1.يتحمل المحكوم عليه قيمة التكاليف القضائية المقررة للدعوى والطلبات المتصلة بها أو قسطاً منها، ما لم ينص النظام أو اللائحة على غير ذلك، وذلك دون إخلال بحق ذوي الشأن في المطالبة بالتعويض.</div>
+          </div>
+        </div>
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ٢</div>
+          <div class="sent-content">
+            
+            <div class="sent-body">وفي حال كان المدعي غير محق في جزء من طلباته، فيتحمل قسط ذلك الجزء.</div>
+          </div>
+        </div>
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ٣</div>
+          <div class="sent-content">
+            
+            <div class="sent-body">2.إذا انتهت الدعوى بالصلح فيتحمل أطراف الدعوى التكاليف القضائية بالتساوي، ما لم يتفقوا على غير ذلك.</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="loo-section">
+        <div class="loo-hdr">
+          <span class="loo-icon">🔍</span>
+          <div>
+            <div class="loo-title">السؤال</div>
+            <div class="loo-q">في رأيك، أي جملة كانت <strong>الأهم</strong> لتوليد الإجابة الصحيحة؟</div>
+            <div class="loo-hint">— أي جملة لو حُذفت لتأثرت الإجابة بشكل جوهري؟</div>
+          </div>
+        </div>
+        <div class="sent-options">
+            <label class="sent-opt">
+              <input type="radio" name="imp-21" value="جملة ١" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ١</div>
+                <div class="sent-text">1.يتحمل المحكوم عليه قيمة التكاليف القضائية المقررة للدعوى والطلبات المتصلة بها أو قسطاً منها، ما لم ينص النظام أو اللائحة على غير ذلك، وذلك دون إخلال بحق ذوي الشأن في المطالبة بالتعويض.</div>
+              </div>
+            </label>
+            <label class="sent-opt">
+              <input type="radio" name="imp-21" value="جملة ٢" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ٢</div>
+                <div class="sent-text">وفي حال كان المدعي غير محق في جزء من طلباته، فيتحمل قسط ذلك الجزء.</div>
+              </div>
+            </label>
+            <label class="sent-opt">
+              <input type="radio" name="imp-21" value="جملة ٣" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ٣</div>
+                <div class="sent-text">2.إذا انتهت الدعوى بالصلح فيتحمل أطراف الدعوى التكاليف القضائية بالتساوي، ما لم يتفقوا على غير ذلك.</div>
+              </div>
+            </label>
+        </div>
+      </div>
+      
+      <div class="comment-section">
+        <div class="comment-lbl">💬 لماذا اخترت هذه الجملة؟ <span class="req-badge">مطلوب</span></div>
+        <textarea class="comment-area" id="note-21" placeholder="مثال: هذه الجملة تحتوي على المعلومة المباشرة التي تجيب على السؤال..." required></textarea>
+        <div class="comment-hint">سطر أو سطرين يكفي</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="question-card" id="card-29">
+    <div class="card-header">
+      <div class="q-num">٣</div>
+      <span class="q-title">ما هو الطلب العارض؟</span>
+      <span class="q-badge">سؤال #٢٩</span>
+    </div>
+    <div class="card-body">
+      
+      <div class="sec-label">الإجابة الأصلية المُولّدة</div>
+      <div class="answer-box">بناءً على المادة الثانية والثمانون من نظام المرافعات الشرعية السعودي، فإن **الطلب العارض** هو:
+
+طلب قانوني يقدمه أحد الخصوم في الدعوى (المدعي أو المدعى عليه) **بعد رفع الدعوى الأصلية وأثناء سير الخصومة**، ويهدف إلى طلب أمر متعلق بها، ولكنه ليس جزءًا من الطلبات الأصلية التي بدأت بها الدعوى.
+
+**ملخص خصائصه وإجراءاته من المادة:**
+
+1.  **توقيت تقديمه:** يُقدم أثناء سير الدعوى، **قبل إقفال باب المرافعة**. حيث تنص المادة صراحة على أنه &quot;لا تقبل الطلبات العارضة بعد إقفال باب المرافعة&quot;.
+
+2.  **طريقة تقديمه:** يمكن تقديمه بإحدى طريقتين:
+    *   **بصحيفة مستقلة:** تبلغ إلى الخصوم الآخرين وفق إجراءات رفع الدعوى المعتادة، **قبل يوم الجلسة** المحددة للنظر فيه.
+    *   **شفهيًا في الجلسة:** بشرط أن يكون الخصم الآخر حاضرًا، ويتم إثبات هذا الطلب في محضر الجلسة.
+
+3.  **الهدف منه:** هو طلب أمر عارض أو طارئ يحتاج للفصل فيه أثناء نظر الدعوى الأصلية، دون الحاجة لرفع دعوى جديدة منفصلة.
+
+**أمثلة تطبيقية على الطلبات العارضة (للتوضيح):**
+*   طلب إجراء معاينة أو تعيين خبير.
+*   طلب سماع شاهد لم يُطلب سماعه سابقًا.
+*   طلب تقديم مستند جديد.
+*   طلب تصحيح أوضاع إجرائية.
+*   طلب وقف الخصومة لأسباب قانونية.
+
+**خلاصة:**  
+الطلب العارض هو أداة إجرائية تسمح للخصم بتقديم طلبات جديدة أو طارئة داخل الدعوى القائمة، ضمن الضوابط الزمنية (قبل إقفال المرافعة) والإجرائية (التبليغ أو الحضور) التي حددتها المادة</div>
+      
+      <div class="sec-label">الجمل المُستخدمة في توليد الإجابة</div>
+      <div class="sentences-list">
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ١</div>
+          <div class="sent-content">
+            <div class="src-tag">📄 نظام المرافعات الشرعية -- المادة الثانية والثمانون</div>
+            <div class="sent-body">تقدم الطلبات العارضة من المدعي أو المدعى عليه بصحيفة تبلغ للخصوم قبل يوم الجلسة وفقًا للإجراءات المعتادة لرفع الدعوى، أو بطلب يقدم شفهيًا في الجلسة في حضور الخصم، ويثبت في محضرها.</div>
+          </div>
+        </div>
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ٢</div>
+          <div class="sent-content">
+            
+            <div class="sent-body">ولا تقبل الطلبات العارضة بعد إقفال باب المرافعة.</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="loo-section">
+        <div class="loo-hdr">
+          <span class="loo-icon">🔍</span>
+          <div>
+            <div class="loo-title">السؤال</div>
+            <div class="loo-q">في رأيك، أي جملة كانت <strong>الأهم</strong> لتوليد الإجابة الصحيحة؟</div>
+            <div class="loo-hint">— أي جملة لو حُذفت لتأثرت الإجابة بشكل جوهري؟</div>
+          </div>
+        </div>
+        <div class="sent-options">
+            <label class="sent-opt">
+              <input type="radio" name="imp-29" value="جملة ١" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ١</div>
+                <div class="sent-text">تقدم الطلبات العارضة من المدعي أو المدعى عليه بصحيفة تبلغ للخصوم قبل يوم الجلسة وفقًا للإجراءات المعتادة لرفع الدعوى، أو بطلب يقدم شفهيًا في الجلسة في حضور الخصم، ويثبت في محضرها.</div>
+              </div>
+            </label>
+            <label class="sent-opt">
+              <input type="radio" name="imp-29" value="جملة ٢" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ٢</div>
+                <div class="sent-text">ولا تقبل الطلبات العارضة بعد إقفال باب المرافعة.</div>
+              </div>
+            </label>
+        </div>
+      </div>
+      
+      <div class="comment-section">
+        <div class="comment-lbl">💬 لماذا اخترت هذه الجملة؟ <span class="req-badge">مطلوب</span></div>
+        <textarea class="comment-area" id="note-29" placeholder="مثال: هذه الجملة تحتوي على المعلومة المباشرة التي تجيب على السؤال..." required></textarea>
+        <div class="comment-hint">سطر أو سطرين يكفي</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="question-card" id="card-55">
+    <div class="card-header">
+      <div class="q-num">٤</div>
+      <span class="q-title">متى يصدر التقدير النهائي لمبلغ التكاليف القضائية للدعوى؟</span>
+      <span class="q-badge">سؤال #٥٥</span>
+    </div>
+    <div class="card-body">
+      
+      <div class="sec-label">الإجابة الأصلية المُولّدة</div>
+      <div class="answer-box">بناءً على المصادر القانونية المقدمة:
+
+يصدر **التقدير النهائي لمبلغ التكاليف القضائية للدعوى بعد انتهائها**، وذلك وفقاً للمادة الثامنة من اللائحة التنفيذية لنظام التكاليف القضائية.
+
+**توضيح إضافي:**
+
+*   **التوقيت:** يكون الإصدار **بعد انتهاء الدعوى** (أي بعد البت فيها بحكم نهائي).
+*   **الهيئة المصدرة:** تصدره **الإدارة المختصة** التي يحددها وزير العدل.
+*   **الإجراءات اللاحقة:**
+    1.  يتم إبلاغ المكلف بأداء التكاليف بهذا التقدير.
+    2.  **لا يتم التحصيل الفعلي** للمبلغ من المكلف إلا بعد انتهاء مدة الاعتراض على هذا التقدير، أو بعد صدور قرار في شأن الاعتراض إذا تم تقديمه.
+*   **قوة التقدير:** وفقاً للمادة الرابعة عشرة من النظام، إذا انتهت الدعوى دون تحصيل التكاليف، فإن هذا التقدير النهائي يعد **سنداً تنفيذياً** يمكن استيفاء المبلغ بمقتضاه.
+
+**ملاحظة:** المادة التاسعة من اللائحة (المصدر 2) تنظم التقدير النهائي لتكاليف **الطلبات** (مثل طلبات التدخل، الإثباتات الوقتية، إلخ) وليس للدعوى الأصلية، وتستثني طلبي النقض والتماس إعادة النظر.</div>
+      
+      <div class="sec-label">الجمل المُستخدمة في توليد الإجابة</div>
+      <div class="sentences-list">
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ١</div>
+          <div class="sent-content">
+            <div class="src-tag">📄 اللائحة التنفيذية لنظام التكاليف القضائية -- المادة الثامنة</div>
+            <div class="sent-body">تصدر الإدارة المختصة -التي يحددها وزير العدل- التقدير النهائي لمبلغ التكاليف القضائية للدعوى بعد انتهائها، ويبلغ المكلف بأداء هذه التكاليف، ولا يُحصل مبلغ التكاليف من المكلف إلا بعد انتهاء مدة الاعتراض على التقدير أو صدور قرار في شأن اعتراضه.</div>
+          </div>
+        </div>
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ٢</div>
+          <div class="sent-content">
+            <div class="src-tag">📄 اللائحة التنفيذية لنظام التكاليف القضائية -- المادة التاسعة</div>
+            <div class="sent-body">فيما عدا طلب النقض وطلب التماس إعادة النظر، تصدر الإدارة المختصة -التي يحددها وزير العدل- التقدير النهائي لمبلغ التكاليف القضائية للطلب بعد البت فيه، ويبلغ المكلف بأداء هذه التكاليف، ولا يُحصل مبلغ التكاليف من المكلف إلا بعد انتهاء مدة الاعتراض على التقدير أو صدور قرار في شأن اعتراضه.</div>
+          </div>
+        </div>
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ٣</div>
+          <div class="sent-content">
+            <div class="src-tag">📄 نظام التكاليف القضائية -- المادة الرابعة عشرة</div>
+            <div class="sent-body">في حال انتهاء الدعوى بالحكم فيها دون تحصيل التكاليف القضائية، فيعد التقدير النهائي الصادر عن الإدارة المختصة سنداً تنفيذيًّا، ويُستوفى وفقاً لما تحدده اللائحة.</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="loo-section">
+        <div class="loo-hdr">
+          <span class="loo-icon">🔍</span>
+          <div>
+            <div class="loo-title">السؤال</div>
+            <div class="loo-q">في رأيك، أي جملة كانت <strong>الأهم</strong> لتوليد الإجابة الصحيحة؟</div>
+            <div class="loo-hint">— أي جملة لو حُذفت لتأثرت الإجابة بشكل جوهري؟</div>
+          </div>
+        </div>
+        <div class="sent-options">
+            <label class="sent-opt">
+              <input type="radio" name="imp-55" value="جملة ١" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ١</div>
+                <div class="sent-text">تصدر الإدارة المختصة -التي يحددها وزير العدل- التقدير النهائي لمبلغ التكاليف القضائية للدعوى بعد انتهائها، ويبلغ المكلف بأداء هذه التكاليف، ولا يُحصل مبلغ التكاليف من المكلف إلا بعد انتهاء مدة الاعتراض على التقدير أو صدور قرار في شأن اعتراضه.</div>
+              </div>
+            </label>
+            <label class="sent-opt">
+              <input type="radio" name="imp-55" value="جملة ٢" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ٢</div>
+                <div class="sent-text">فيما عدا طلب النقض وطلب التماس إعادة النظر، تصدر الإدارة المختصة -التي يحددها وزير العدل- التقدير النهائي لمبلغ التكاليف القضائية للطلب بعد البت فيه، ويبلغ المكلف بأداء هذه التكاليف، ولا يُحصل مبلغ التكاليف من المكلف إلا بعد انتهاء مدة الاعتراض على التقدير أو صدور قرار في شأن اعتراضه.</div>
+              </div>
+            </label>
+            <label class="sent-opt">
+              <input type="radio" name="imp-55" value="جملة ٣" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ٣</div>
+                <div class="sent-text">في حال انتهاء الدعوى بالحكم فيها دون تحصيل التكاليف القضائية، فيعد التقدير النهائي الصادر عن الإدارة المختصة سنداً تنفيذيًّا، ويُستوفى وفقاً لما تحدده اللائحة.</div>
+              </div>
+            </label>
+        </div>
+      </div>
+      
+      <div class="comment-section">
+        <div class="comment-lbl">💬 لماذا اخترت هذه الجملة؟ <span class="req-badge">مطلوب</span></div>
+        <textarea class="comment-area" id="note-55" placeholder="مثال: هذه الجملة تحتوي على المعلومة المباشرة التي تجيب على السؤال..." required></textarea>
+        <div class="comment-hint">سطر أو سطرين يكفي</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="question-card" id="card-65">
+    <div class="card-header">
+      <div class="q-num">٥</div>
+      <span class="q-title">هل عدم دفع التكاليف القضائية يحول دون قيد الدعوى في المحكمة؟</span>
+      <span class="q-badge">سؤال #٦٥</span>
+    </div>
+    <div class="card-body">
+      
+      <div class="sec-label">الإجابة الأصلية المُولّدة</div>
+      <div class="answer-box">بناءً على المادة الثانية عشرة من نظام التكاليف القضائية السعودي:
+
+**الإجابة المباشرة:**
+لا، عدم دفع التكاليف القضائية **لا يحول** دون قيد الدعوى العادية في المحكمة أو البت فيها.
+
+**التفصيل:**
+
+1.  **القاعدة العامة (للطلبات والدعاوى العادية):**
+    *   تنص الفقرة (1) من المادة بوضوح على أن عدم دفع التكاليف **لا يمنع** المحكمة من:
+        *   **قيد الدعوى** (أي قبولها وفتح ملف لها).
+        *   **قيد الطلب والبت فيه** (أي النظر فيه وإصدار حكم).
+    *   يتم تحصيل هذه التكاليف لاحقاً وفق الإجراءات المحددة في اللائحة التنفيذية.
+
+2.  **الاستثناءان الوحيدان (حالات السقوط):**
+    *   تنطبق القاعدة السابقة على جميع الطلبات والدعاوى **ما عدا حالتين محددتين**:
+        *   **طلب النقض** (ضد الأحكام الصادرة من محاكم الاستئناف).
+        *   **طلب التماس إعادة النظر** (في أحكام معينة).
+    *   في هاتين الحالتين فقط (وفق الفقرة 2)، يجب على الطالب سداد التكاليف خلال **ثلاثين يوماً** من تاريخ قيد الطلب. إذا لم يسدد خلال هذه المدة، **تحكم المحكمة بسقوط حقه في الطلب** ويصبح الحكم نهائياً.
+
+**الخلاصة:**
+للدعاوى والطلبات العادية (غير طلبات النقض والتماس إعادة النظر)، يمكن قيد الدعوى والمضي فيها دون سداد مسبق للتكاليف القضائية، على أن يتم تحصيلها لاحقاً. أما في طلبات النقض والتماس إعادة النظر، فيشكل عدم السداد خلال المهلة المحددة سبباً لسقوط الحق في الطلب.</div>
+      
+      <div class="sec-label">الجمل المُستخدمة في توليد الإجابة</div>
+      <div class="sentences-list">
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ١</div>
+          <div class="sent-content">
+            <div class="src-tag">📄 نظام التكاليف القضائية -- المادة الثانية عشرة</div>
+            <div class="sent-body">1.فيما عدا طلب النقض وطلب التماس إعادة النظر، لايحول عدم دفع التكاليف القضائية دون قيد المحكمة للدعوى أو قيد الطلب والبت فيهما، ويكون تحصيلها وفقاً للإجراءات التي تحددها اللائحة.</div>
+          </div>
+        </div>
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ٢</div>
+          <div class="sent-content">
+            
+            <div class="sent-body">2.يُمهل طالب النقض وطالب التماس إعادة النظر مدة (ثلاثين) يوماً من تاريخ قيد الطلب لدى المحكمة المختصة لسداد التكاليف القضائية المحددة للطلب؛</div>
+          </div>
+        </div>
+        <div class="sentence-row">
+          <div class="sent-badge">جملة ٣</div>
+          <div class="sent-content">
+            
+            <div class="sent-body">فإن لم يقم بالسداد خلال هذه المدة، تحكم المحكمة بسقوط حقه في الطلب، ويُعد الحكم نهائياً.</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="loo-section">
+        <div class="loo-hdr">
+          <span class="loo-icon">🔍</span>
+          <div>
+            <div class="loo-title">السؤال</div>
+            <div class="loo-q">في رأيك، أي جملة كانت <strong>الأهم</strong> لتوليد الإجابة الصحيحة؟</div>
+            <div class="loo-hint">— أي جملة لو حُذفت لتأثرت الإجابة بشكل جوهري؟</div>
+          </div>
+        </div>
+        <div class="sent-options">
+            <label class="sent-opt">
+              <input type="radio" name="imp-65" value="جملة ١" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ١</div>
+                <div class="sent-text">1.فيما عدا طلب النقض وطلب التماس إعادة النظر، لايحول عدم دفع التكاليف القضائية دون قيد المحكمة للدعوى أو قيد الطلب والبت فيهما، ويكون تحصيلها وفقاً للإجراءات التي تحددها اللائحة.</div>
+              </div>
+            </label>
+            <label class="sent-opt">
+              <input type="radio" name="imp-65" value="جملة ٢" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ٢</div>
+                <div class="sent-text">2.يُمهل طالب النقض وطالب التماس إعادة النظر مدة (ثلاثين) يوماً من تاريخ قيد الطلب لدى المحكمة المختصة لسداد التكاليف القضائية المحددة للطلب؛</div>
+              </div>
+            </label>
+            <label class="sent-opt">
+              <input type="radio" name="imp-65" value="جملة ٣" required>
+              <div class="sent-card">
+                <div class="sent-num">جملة ٣</div>
+                <div class="sent-text">فإن لم يقم بالسداد خلال هذه المدة، تحكم المحكمة بسقوط حقه في الطلب، ويُعد الحكم نهائياً.</div>
+              </div>
+            </label>
+        </div>
+      </div>
+      
+      <div class="comment-section">
+        <div class="comment-lbl">💬 لماذا اخترت هذه الجملة؟ <span class="req-badge">مطلوب</span></div>
+        <textarea class="comment-area" id="note-65" placeholder="مثال: هذه الجملة تحتوي على المعلومة المباشرة التي تجيب على السؤال..." required></textarea>
+        <div class="comment-hint">سطر أو سطرين يكفي</div>
+      </div>
+    </div>
+  </div>
+
+
+<div class="submit-bar">
+  <div class="submit-count">
+    <strong id="bar-count">٠/٥ مكتملة</strong>
+    <span id="bar-sub">أكمل جميع الأسئلة والتعليقات</span>
+  </div>
+  <button class="btn-submit" id="btn-submit" onclick="openModal()" disabled>
+    📥 حفظ
+  </button>
+</div>
+
+<div id="modal-overlay" onclick="closeModalOutside(event)">
+  <div id="modal-box">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📊 حفظ النتائج</div>
+    <div class="modal-sub">راجع الملخص ثم اضغط حفظ كـ Excel</div>
+    <div class="modal-preview" id="modal-preview"></div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">تراجع</button>
+      <button class="btn-send" onclick="saveExcel()">📥 حفظ كـ Excel</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const Q_IDS    = [5, 21, 29, 55, 65];
+const Q_TITLES = {"5": "كم تبلغ قيمة التكاليف القضائية لطلب التنفيذ المباشر؟", "21": "كيف يتم احتساب التكاليف القضائية إذا انتهت الدعوى بالصلح؟", "29": "ما هو الطلب العارض؟", "55": "متى يصدر التقدير النهائي لمبلغ التكاليف القضائية للدعوى؟", "65": "هل عدم دفع التكاليف القضائية يحول دون قيد الدعوى في المحكمة؟"};
+
+function getVal(name) {
+  const el = document.querySelector('input[name="'+name+'"]:checked');
+  return el ? el.value : '';
+}
+function getNote(qidx) {
+  return (document.getElementById('note-'+qidx)||{}).value.trim();
+}
+function isComplete(qidx) {
+  return getVal('imp-'+qidx) && getNote(qidx).length > 0;
+}
+
+const AR = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩','١٠'];
+function updateProgress() {
+  const done = Q_IDS.filter(id => isComplete(id)).length;
+  document.getElementById('prog-bar').style.width = (done/Q_IDS.length*100)+'%';
+  document.getElementById('prog-text').textContent = AR[done]+' من '+AR[Q_IDS.length]+' أسئلة مكتملة';
+  document.getElementById('bar-count').textContent = done+'/'+Q_IDS.length+' مكتملة';
+
+  const allDone = done === Q_IDS.length;
+  const btn = document.getElementById('btn-submit');
+  btn.disabled = !allDone;
+  document.getElementById('bar-sub').textContent = allDone ? 'جاهز للإرسال ✓' : 'أكمل جميع الأسئلة والتعليقات';
+
+  Q_IDS.forEach(function(id) {
+    const card = document.getElementById('card-'+id);
+    if (card) card.classList.toggle('done', isComplete(id));
+  });
+}
+
+document.addEventListener('input', function(e) {
+  if (e.target.classList.contains('comment-area')) {
+    e.target.classList.toggle('filled', e.target.value.trim().length > 0);
+    updateProgress();
+  }
+});
+document.addEventListener('change', function(e) {
+  if (e.target.type === 'radio') updateProgress();
+});
+
+function buildMessage() {
+  const name = document.getElementById('ev-name').value.trim() || 'غير محدد';
+  const spec = document.getElementById('ev-spec').value.trim();
+  const date = document.getElementById('ev-date').value || new Date().toLocaleDateString('ar-SA');
+  let msg = '🔍 *تقييم أهمية الجمل (Leave-One-Out)*\n';
+  msg += '👤 '+name+(spec?' — '+spec:'')+' | 📅 '+date+'\n';
+  msg += '━━━━━━━━━━━━━━━━━━━━\n\n';
+  Q_IDS.forEach(function(qidx, i) {
+    const imp  = getVal('imp-'+qidx)  || '—';
+    const note = getNote(qidx);
+    msg += '*'+(i+1)+'. سؤال #'+qidx+'*\n';
+    msg += '   '+Q_TITLES[qidx]+'\n';
+    msg += '   • الجملة الأهم: '+imp+'\n';
+    msg += '   💬 '+note+'\n\n';
+  });
+  msg += '━━━━━━━━━━━━━━━━━━━━\n';
+  msg += '✅ '+Q_IDS.filter(id=>isComplete(id)).length+'/'+Q_IDS.length+' أسئلة مكتملة';
+  return msg;
+}
+
+function openModal() {
+  document.getElementById('modal-preview').textContent = buildMessage();
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+function closeModalOutside(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function saveExcel() {
+  const name = document.getElementById('ev-name').value.trim() || 'غير محدد';
+  const spec = document.getElementById('ev-spec').value.trim() || '';
+  const date = document.getElementById('ev-date').value || new Date().toISOString().split('T')[0];
+
+  const headers = ['#', 'رقم السؤال', 'نص السؤال', 'الجملة الأهم', 'سبب الاختيار'];
+  const rows = Q_IDS.map(function(qidx, i) {
+    return [
+      i + 1,
+      'Q' + qidx,
+      Q_TITLES[qidx],
+      getVal('imp-' + qidx) || '—',
+      getNote(qidx)
+    ];
+  });
+
+  const sheetData = [headers].concat(rows);
+  const ws = XLSX.utils.aoa_to_sheet(sheetData);
+  ws['!cols'] = [{wch:4}, {wch:10}, {wch:55}, {wch:14}, {wch:50}];
+
+  const summaryData = [
+    ['طريقة التقييم', 'Leave-One-Out (تحديد الجملة الأهم)'],
+    ['المقيّم', name],
+    ['التخصص', spec],
+    ['التاريخ', date],
+    ['عدد الأسئلة', Q_IDS.length],
+    ['الأسئلة المكتملة', Q_IDS.filter(id => isComplete(id)).length],
+  ];
+  const ws2 = XLSX.utils.aoa_to_sheet(summaryData);
+  ws2['!cols'] = [{wch:22}, {wch:40}];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'نتائج التقييم');
+  XLSX.utils.book_append_sheet(wb, ws2, 'معلومات المقيّم');
+
+  const filename = 'LOO_تقييم_' + (name.replace(/\s+/g,'_') || 'مجهول') + '_' + date + '.xlsx';
+  XLSX.writeFile(wb, filename);
+  closeModal();
+}
+
+document.getElementById('ev-date').value = new Date().toISOString().split('T')[0];
+updateProgress();
+</script>
+</body>
+</html>

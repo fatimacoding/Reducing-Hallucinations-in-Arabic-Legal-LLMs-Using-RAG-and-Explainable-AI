@@ -1,0 +1,135 @@
+==============================================================================
+  RAG-Ex v2 — Results Analysis Report
+==============================================================================
+
+Total samples:        79
+Strategies evaluated: 6
+Source distribution:  {1: 41, 2: 14, 3: 24}
+Sentences per sample: min=1.0, max=33.0, mean=9.91
+
+------------------------------------------------------------------------------
+1. PER-STRATEGY DESCRIPTIVE STATISTICS  (over per-sample mean scores)
+------------------------------------------------------------------------------
+Strategy                  mean   95%CI     std  median     min     max
+Leave-One-Out            0.385   0.036   0.162   0.388   0.062   0.698
+Random Noise             0.450   0.028   0.123   0.458   0.232   0.739
+Entity Manipulation      0.443   0.027   0.122   0.452   0.197   0.814
+Antonym Injection        0.441   0.028   0.126   0.438   0.194   0.744
+Synonym Injection        0.439   0.027   0.120   0.448   0.171   0.760
+Order Manipulation       0.451   0.025   0.111   0.448   0.248   0.745
+
+------------------------------------------------------------------------------
+2. CALIBRATION CHECK  (Antonym should exceed Synonym)
+------------------------------------------------------------------------------
+  Mean Antonym score: 0.441
+  Mean Synonym score: 0.439
+  Mean diff (A - S):  +0.002
+  Antonym > Synonym in 37/79 samples (46.8%)
+  Wilcoxon (one-sided greater): W=1384.50, p=0.4259
+
+------------------------------------------------------------------------------
+3. STRATEGY AGREEMENT  (mean Spearman ρ over per-sample sentence rankings)
+------------------------------------------------------------------------------
+  Off-diagonal mean ρ: 0.034  (samples with >=2 sentences: 69)
+  Pairwise matrix:
+        Leave-  Random  Entity  Antony  Synony  Order 
+  Leave-   1.000   0.160   0.035   0.061   0.022   0.095
+  Random   0.160   1.000   0.036   0.037  -0.044   0.053
+  Entity   0.035   0.036   1.000   0.009   0.055   0.046
+  Antony   0.061   0.037   0.009   1.000   0.012  -0.020
+  Synony   0.022  -0.044   0.055   0.012   1.000  -0.044
+  Order    0.095   0.053   0.046  -0.020  -0.044   1.000
+
+------------------------------------------------------------------------------
+4. AGREEMENT WITH LEAVE-ONE-OUT BASELINE  (per LLM-based strategy)
+------------------------------------------------------------------------------
+  Random Noise            mean ρ = 0.160  (n=69)
+  Entity Manipulation     mean ρ = 0.035  (n=69)
+  Antonym Injection       mean ρ = 0.061  (n=69)
+  Synonym Injection       mean ρ = 0.022  (n=69)
+  Order Manipulation      mean ρ = 0.096  (n=68)
+
+------------------------------------------------------------------------------
+5. GROUNDING DIAGNOSTIC  (top-1 sentence's share of total importance)
+------------------------------------------------------------------------------
+  Leave-One-Out           mean =  47.4%  median =  26.2%
+  Random Noise            mean =  44.3%  median =  24.0%
+  Entity Manipulation     mean =  44.6%  median =  27.1%
+  Antonym Injection       mean =  44.2%  median =  26.2%
+  Synonym Injection       mean =  46.0%  median =  28.6%
+  Order Manipulation      mean =  43.9%  median =  23.0%
+
+------------------------------------------------------------------------------
+6. STATS BY NUMBER OF SOURCES
+------------------------------------------------------------------------------
+  1 source(s)  (n=41)
+    Leave-One-Out           mean=0.347  std=0.182
+    Random Noise            mean=0.416  std=0.123
+    Entity Manipulation     mean=0.418  std=0.128
+    Antonym Injection       mean=0.420  std=0.124
+    Synonym Injection       mean=0.441  std=0.124
+    Order Manipulation      mean=0.428  std=0.118
+
+  2 source(s)  (n=14)
+    Leave-One-Out           mean=0.453  std=0.143
+    Random Noise            mean=0.507  std=0.139
+    Entity Manipulation     mean=0.456  std=0.113
+    Antonym Injection       mean=0.483  std=0.115
+    Synonym Injection       mean=0.486  std=0.097
+    Order Manipulation      mean=0.470  std=0.085
+
+  3 source(s)  (n=24)
+    Leave-One-Out           mean=0.410  std=0.120
+    Random Noise            mean=0.475  std=0.097
+    Entity Manipulation     mean=0.478  std=0.110
+    Antonym Injection       mean=0.451  std=0.133
+    Synonym Injection       mean=0.409  std=0.120
+    Order Manipulation      mean=0.480  std=0.106
+
+------------------------------------------------------------------------------
+7. EXTREMES  (top 5 most-impacted samples per strategy)
+------------------------------------------------------------------------------
+
+  Leave-One-Out
+    score=0.698  idx= 25  Q: ما المقصود بالسند التنفيذي: (حكم محكم مذيل بأمر التنفيذ) عند
+    score=0.691  idx= 37  Q: ما هي السندات التنفيذية التي نصّت عليها المادة التاسعة من نظ
+    score=0.664  idx= 58  Q: من المختص في فصل المنازعات في محكمة التنفيذ؟
+    score=0.634  idx= 64  Q: هل توجد مدة محددة للمحامي الغير ممارس بعدها لا يسمح له بإعاد
+    score=0.616  idx= 74  Q: هل يسمح بزواج السعودي من مقيمة؟
+
+  Random Noise
+    score=0.739  idx=  6  Q: كم تبلغ قيمة التكاليف القضائية لطلب ذي المصلحة الاطلاع على أ
+    score=0.729  idx= 79  Q: هل يمكن للقطاع الخاص تقديم خدمات مساندة لتطبيق أحكام نظام ال
+    score=0.669  idx= 70  Q: هل يجوز فتح باب المرافعة بعد تقرير قفله؟
+    score=0.665  idx= 33  Q: ما هي الحالات التي لا يستحق فيها دفع تكاليف قضائية؟
+    score=0.621  idx= 17  Q: كم يبلغ مقدار التكاليف القضائية للدعوى إذا كانت قيمة المطالب
+
+  Entity Manipulation
+    score=0.814  idx= 51  Q: متى ترد التكاليف القضائية؟
+    score=0.716  idx= 70  Q: هل يجوز فتح باب المرافعة بعد تقرير قفله؟
+    score=0.676  idx=  6  Q: كم تبلغ قيمة التكاليف القضائية لطلب ذي المصلحة الاطلاع على أ
+    score=0.666  idx= 63  Q: هل تنظر المحكمة في الدعاوى المستعجلة؟
+    score=0.665  idx= 77  Q: هل يمكن تنفيذ حكم الزيارة في غير بلد المزور؟
+
+  Antonym Injection
+    score=0.744  idx= 45  Q: ما هي حالات طلب نقض حكم صادر من محكمة الاستئناف أمام المحكمة
+    score=0.675  idx= 18  Q: كم يبلغ مقدار التكاليف القضائية للدعوى إذا كانت قيمة المطالب
+    score=0.674  idx= 79  Q: هل يمكن للقطاع الخاص تقديم خدمات مساندة لتطبيق أحكام نظام ال
+    score=0.659  idx=  3  Q: كم تبلغ رسوم إصدار ترخيص مكتب محاماة أجنبي؟
+    score=0.655  idx= 63  Q: هل تنظر المحكمة في الدعاوى المستعجلة؟
+
+  Synonym Injection
+    score=0.760  idx= 15  Q: كم يبلغ مقدار التكاليف القضائية للدعوى إذا كانت قيمة المطالب
+    score=0.645  idx= 65  Q: هل عدم دفع التكاليف القضائية يحول دون قيد الدعوى في المحكمة؟
+    score=0.644  idx=  6  Q: كم تبلغ قيمة التكاليف القضائية لطلب ذي المصلحة الاطلاع على أ
+    score=0.642  idx=  3  Q: كم تبلغ رسوم إصدار ترخيص مكتب محاماة أجنبي؟
+    score=0.619  idx= 51  Q: متى ترد التكاليف القضائية؟
+
+  Order Manipulation
+    score=0.745  idx= 15  Q: كم يبلغ مقدار التكاليف القضائية للدعوى إذا كانت قيمة المطالب
+    score=0.665  idx= 68  Q: هل يجوز الحكم بالشبهة؟
+    score=0.642  idx= 63  Q: هل تنظر المحكمة في الدعاوى المستعجلة؟
+    score=0.627  idx= 38  Q: ما هي الشروط الواجب توافرها لتجديد رخصة موثق؟
+    score=0.626  idx= 60  Q: من هم الأشخاص الذين لا تفرض عليهم تكاليف قضائية؟
+
+==============================================================================
