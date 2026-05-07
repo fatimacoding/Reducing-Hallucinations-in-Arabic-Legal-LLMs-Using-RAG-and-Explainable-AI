@@ -3,13 +3,14 @@
 **Graduation Project — Department of Computer Science and Artificial Intelligence, University of Jeddah**
 
 ### Team Members
-- @AlaaAlmunyah
-- @AseelIsCoding
-- @fatimacoding
-- @hdla22
-- @ShadenEAlamri
 
-**Supervisor:** Dr. Safa Alsafari
+- [Alaa Almunyah](https://github.com/AlaaAlmunyah)
+- [Aseel Almehmadi](https://github.com/AseelIsCoding)
+- [Fatima Almaashi](https://github.com/fatimacoding)
+- [Hadeel Alabdulhadi](https://github.com/hdla22)
+- [Shaden Alamri](https://github.com/ShadenEAlamri)
+
+**Supervisor: Dr. Safa Alsafari**
 ---
 
 ## Overview
