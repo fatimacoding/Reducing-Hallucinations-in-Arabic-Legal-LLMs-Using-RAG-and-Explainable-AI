@@ -2,7 +2,11 @@
 
 > **Graduation Project — Department of Computer Science and Artificial Intelligence, University of Jeddah**
 >
-> Alaa Almunyah · Aseel Almehmadi · Fatima Almaashi · Hadeel Alabdulhadi · Shaden Alamri
+> · Alaa Almunyah @AlaaAlmunyah
+> · Aseel Almehmadi @AseelIsCoding
+> · Fatima Almaashi @fatimacoding
+> · Hadeel Alabdulhadi @hdla22
+> · Shaden Alamri @ShadenEAlamri
 >
 > Supervisor: Dr. Safa Alsafari
 
