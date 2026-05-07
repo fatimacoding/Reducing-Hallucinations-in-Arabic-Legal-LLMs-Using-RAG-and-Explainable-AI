@@ -1,14 +1,15 @@
 # Reducing Hallucinations in Arabic Legal LLMs Using RAG and Explainable AI
 
-> **Graduation Project — Department of Computer Science and Artificial Intelligence, University of Jeddah**
->
-> · Alaa Almunyah @AlaaAlmunyah
-> · Aseel Almehmadi @AseelIsCoding
-> · Fatima Almaashi @fatimacoding
-> · Hadeel Alabdulhadi @hdla22
-> · Shaden Alamri @ShadenEAlamri
->
-> Supervisor: Dr. Safa Alsafari
+**Graduation Project — Department of Computer Science and Artificial Intelligence, University of Jeddah**
+
+### Team Members
+· Alaa Almunyah @AlaaAlmunyah
+· Aseel Almehmadi @AseelIsCoding
+· Fatima Almaashi @fatimacoding
+· Hadeel Alabdulhadi @hdla22
+· Shaden Alamri @ShadenEAlamri
+
+**Supervisor:** Dr. Safa Alsafari
 
 ---
 
