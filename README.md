@@ -10,7 +10,7 @@
 - [Hadeel Alabdulhadi](https://github.com/hdla22)
 - [Shaden Alamri](https://github.com/ShadenEAlamri)
 
-**Supervisor: Dr. Safa Alsafari**
+> Supervisor: Dr. Safa Alsafari
 ---
 
 ## Overview
